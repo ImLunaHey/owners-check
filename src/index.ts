@@ -103,7 +103,7 @@ const main = async () => {
 
         // Update the existing comment
         if (comment) {
-            console.info('Adding comment');
+            console.info('Updating comment');
             await octokit.rest.issues.updateComment({
                 ...context.repo,
                 comment_id: comment.id,
