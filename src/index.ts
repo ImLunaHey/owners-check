@@ -7,8 +7,8 @@ import { outdent } from 'outdent';
 const main = async () => {
     try {
         const token = process.env.GITHUB_TOKEN || core.getInput('token');
-
         if (!token) throw new Error('token not specified');
+        console.info('Found Github token', { token });
 
         const octokit = getOctokit(token);
 
@@ -23,10 +23,12 @@ const main = async () => {
         // Workspace directory
         const workspaceDirectory = process.env.GITHUB_WORKSPACE;
         if (!workspaceDirectory) throw new Error('No workspace');
+        console.info('Found workspace directory', { workspaceDirectory });
 
         // PR number
         const prNumber = context.payload.pull_request?.number;
         if (!prNumber) throw new Error('No PR number');
+        console.info('Found PR number', { prNumber });
 
         // Get code owner of files
         const codeOwners = new CodeOwners(workspaceDirectory);
@@ -35,6 +37,7 @@ const main = async () => {
         const { changedFiles } = await getChangedFilesForRoots([workspaceDirectory], {
             changedSince: context.sha
         });
+        console.info('Files changed since last commit', { changedFiles });
 
         // Get the owner of each file
         const owners: Record<string, string[]> = {};
@@ -53,6 +56,7 @@ const main = async () => {
                 (files[filePath] as string[]).push(owner);
             }
         }
+        console.info('Found owners of files', { owners, files });
 
         // Get the minimum set of reviewers we need
         const uncoveredFiles = new Set(Object.keys(files));
@@ -74,9 +78,13 @@ const main = async () => {
                 owners[bestPerson].forEach(file => uncoveredFiles.delete(file));
             }
         }
+        console.info('Found minimum needed owners', { minSetOfPeople });
 
         // Auto add reviewers to PR
-        if (core.getInput('auto-add-reviewers')) await addReviewers(prNumber, [...minSetOfPeople.values()]);
+        if (core.getInput('auto-add-reviewers')) {
+            await addReviewers(prNumber, [...minSetOfPeople.values()]);
+            console.info('Automatically added reviewers', { minSetOfPeople });
+        }
 
         // Comment with who owns which files
         await octokit.rest.issues.createComment({
