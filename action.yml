@@ -1,0 +1,13 @@
+name: 'Owners check'
+description: 'List reviewer for all changed files'
+inputs:
+  auto-add-reviewers:
+    description: 'Should the reviewers be automatically added to the PR?'
+    required: false
+    default: false
+  token:
+    description: 'Github token'
+    required: false
+runs:
+  using: 'bun'
+  main: 'dist/index.js'
