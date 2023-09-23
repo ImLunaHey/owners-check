@@ -33,8 +33,7 @@ const main = async () => {
 
         // Get all files that were changed since last commit
         const { changedFiles } = await getChangedFilesForRoots([workspaceDirectory], {
-            withAncestor: true,
-            changedSince: context.payload.pull_request?.base?.sha,
+            changedSince: context.sha
         });
 
         // Get the owner of each file
