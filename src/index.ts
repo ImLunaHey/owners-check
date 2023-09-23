@@ -82,12 +82,14 @@ const main = async () => {
 
         // Auto add reviewers to PR
         if (core.getInput('auto-add-reviewers')) {
+            console.info('Attempting to add reviewers', { minSetOfPeople });
             await addReviewers(prNumber, [...minSetOfPeople.values()]);
             console.info('Automatically added reviewers', { minSetOfPeople });
         }
 
         // Comment with who owns which files
-        await octokit.rest.issues.createComment({
+        console.info('Adding comment');
+        const comment = await octokit.rest.issues.createComment({
             ...context.repo,
             issue_number: prNumber,
             body: outdent`
@@ -96,6 +98,7 @@ const main = async () => {
                 ${[...minSetOfPeople.values()].map(owner => `|${owner}|\`\`\`${owners[owner].join(', ')}\`\`\`|`)}
             `,
         });
+        console.info('Comment added', { comment });
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error(error.message);
