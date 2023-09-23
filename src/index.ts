@@ -1,7 +1,6 @@
 import core from '@actions/core';
 import CodeOwners from 'codeowners';
 import { context, getOctokit } from '@actions/github';
-import { getChangedFilesForRoots } from 'jest-changed-files';
 import { outdent } from 'outdent';
 
 const createComment = (minSetOfPeople: Set<string>, owners: Record<string, string[]>) => outdent`
@@ -12,6 +11,9 @@ const createComment = (minSetOfPeople: Set<string>, owners: Record<string, strin
 
 const main = async () => {
     try {
+        const base = context.payload.pull_request?.base.sha;
+        const head = context.payload.pull_request?.head.sha;
+
         const token = process.env.GITHUB_TOKEN || core.getInput('token');
         if (!token) throw new Error('token not specified');
         console.info('Found Github token', { token });
@@ -40,10 +42,15 @@ const main = async () => {
         const codeOwners = new CodeOwners(workspaceDirectory);
 
         // Get all files that were changed in PR
-        console.log('SHA before PR', { sha: github.event.pull_request.base.sha });
-        const { changedFiles } = await getChangedFilesForRoots([workspaceDirectory], {
-            changedSince: github.event.pull_request.base.sha,
+        console.log('SHA before PR', { base, head });
+        const response = await octokit.rest.repos.compareCommits({
+            base,
+            head,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
         });
+
+        const changedFiles = response.data.files?.map(file => file.filename) ?? [];
         console.info('Files changed since last commit', { changedFiles });
 
         // Get the owner of each file

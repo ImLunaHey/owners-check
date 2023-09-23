@@ -12,7 +12,6 @@
     "@types/js-yaml": "^4.0.6",
     "@types/node": "^20.6.3",
     "codeowners": "^5.1.1",
-    "jest-changed-files": "^29.7.0",
     "js-yaml": "^4.1.0",
     "outdent": "^0.8.0",
     "tsup": "^7.2.0"
