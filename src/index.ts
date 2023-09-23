@@ -4,6 +4,12 @@ import { context, getOctokit } from '@actions/github';
 import { getChangedFilesForRoots } from 'jest-changed-files';
 import { outdent } from 'outdent';
 
+const createComment = (minSetOfPeople: Set<string>, owners: Record<string, string[]>) => outdent`
+    | Owner | FilePath |
+    |-------|----------|
+    ${[...minSetOfPeople.values()].map(owner => `|${owner}|\`\`\`${owners[owner].join(', ')}\`\`\`|`)}
+`;
+
 const main = async () => {
     try {
         const token = process.env.GITHUB_TOKEN || core.getInput('token');
@@ -87,16 +93,31 @@ const main = async () => {
             console.info('Automatically added reviewers', { minSetOfPeople });
         }
 
-        // Comment with who owns which files
+        // Try to find existing comment
+        const comment = await octokit.rest.issues.listComments({
+            issue_number: context.issue.number,
+            owner: context.issue.owner,
+            repo: context.issue.repo,
+        }).then(comments => comments.data.find(comment => comment.user?.name === 'github-actions[bot]' && comment.body?.includes('| Owner | FilePath |')));
+
+        // Update the existing comment
+        if (comment) {
+            console.info('Adding comment');
+            await octokit.rest.issues.updateComment({
+                ...context.repo,
+                comment_id: comment.id,
+                body: createComment(minSetOfPeople, owners),
+            });
+            console.info('Comment added', { comment });
+            return;
+        }
+
+        // Create a new comment
         console.info('Adding comment');
-        const comment = await octokit.rest.issues.createComment({
+        await octokit.rest.issues.createComment({
             ...context.repo,
             issue_number: prNumber,
-            body: outdent`
-                | Owner | FilePath |
-                |-------|----------|
-                ${[...minSetOfPeople.values()].map(owner => `|${owner}|\`\`\`${owners[owner].join(', ')}\`\`\`|`)}
-            `,
+            body: createComment(minSetOfPeople, owners),
         });
         console.info('Comment added', { comment });
     } catch (error: unknown) {
