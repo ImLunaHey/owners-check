@@ -1,13 +1,12 @@
-name: 'Owners check'
-description: 'List reviewer for all changed files'
+name: "Owners check"
+description: "List reviewer for all changed files"
 inputs:
   auto-add-reviewers:
-    description: 'Should the reviewers be automatically added to the PR?'
+    description: "Should the reviewers be automatically added to the PR?"
     required: false
-    default: false
   token:
-    description: 'Github token'
+    description: "Github token"
     required: false
 runs:
-  using: 'bun'
-  main: 'dist/index.js'
+  using: "node20"
+  main: "dist/index.js"
