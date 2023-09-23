@@ -39,9 +39,10 @@ const main = async () => {
         // Get code owner of files
         const codeOwners = new CodeOwners(workspaceDirectory);
 
-        // Get all files that were changed since last commit
+        console.info({ context });
+
+        // Get all files that were changed in PR
         const { changedFiles } = await getChangedFilesForRoots([workspaceDirectory], {
-            changedSince: context.sha
         });
         console.info('Files changed since last commit', { changedFiles });
 
@@ -109,17 +110,18 @@ const main = async () => {
                 body: createComment(minSetOfPeople, owners),
             });
             console.info('Comment added', { comment });
-            return;
         }
 
         // Create a new comment
-        console.info('Adding comment');
-        await octokit.rest.issues.createComment({
-            ...context.repo,
-            issue_number: prNumber,
-            body: createComment(minSetOfPeople, owners),
-        });
-        console.info('Comment added', { comment });
+        if (!comment) {
+            console.info('Adding comment');
+            await octokit.rest.issues.createComment({
+                ...context.repo,
+                issue_number: prNumber,
+                body: createComment(minSetOfPeople, owners),
+            });
+            console.info('Comment added', { comment });
+        }
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error(error.message);
