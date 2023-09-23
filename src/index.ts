@@ -39,10 +39,10 @@ const main = async () => {
         // Get code owner of files
         const codeOwners = new CodeOwners(workspaceDirectory);
 
-        console.info({ context });
-
         // Get all files that were changed in PR
+        console.log('SHA before PR', { sha: github.event.pull_request.base.sha });
         const { changedFiles } = await getChangedFilesForRoots([workspaceDirectory], {
+            changedSince: github.event.pull_request.base.sha,
         });
         console.info('Files changed since last commit', { changedFiles });
 
