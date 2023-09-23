@@ -103,12 +103,12 @@ const main = async () => {
             owner: context.issue.owner,
             repo: context.issue.repo,
         });
-        console.info('Fetched comments for PR', comments);
+        console.info('Fetched comments for PR');
         const comment = comments.data.find(comment => comment.body?.includes('| Owner | FilePath |'));
 
         // Update the existing comment
         if (comment) {
-            console.info('Updating comment');
+            console.info('Updating existing comment');
             await octokit.rest.issues.updateComment({
                 ...context.repo,
                 comment_id: comment.id,
