@@ -4,20 +4,21 @@ import { context, getOctokit } from '@actions/github';
 import { getChangedFilesForRoots } from 'jest-changed-files';
 import { outdent } from 'outdent';
 
-const token = process.env.GITHUB_TOKEN || core.getInput('token');
-if (!token) console.log('token not specified');
-
-const octokit = getOctokit(token);
-
-const addReviewers = async (prNumber: number, reviewers: string[]) => {
-    await octokit.rest.pulls.requestReviewers({
-        ...context.repo,
-        pull_number: prNumber,
-        reviewers,
-    });
-};
-
 try {
+    const token = process.env.GITHUB_TOKEN || core.getInput('token');
+
+    if (!token) throw new Error('token not specified');
+
+    const octokit = getOctokit(token);
+
+    const addReviewers = async (prNumber: number, reviewers: string[]) => {
+        await octokit.rest.pulls.requestReviewers({
+            ...context.repo,
+            pull_number: prNumber,
+            reviewers,
+        });
+    };
+
     // Workspace directory
     const workspaceDirectory = process.env.GITHUB_WORKSPACE;
     if (!workspaceDirectory) throw new Error('No workspace');
