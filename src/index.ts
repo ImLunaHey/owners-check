@@ -98,11 +98,13 @@ const main = async () => {
         }
 
         // Try to find existing comment
-        const comment = await octokit.rest.issues.listComments({
+        const comments = await octokit.rest.issues.listComments({
             issue_number: context.issue.number,
             owner: context.issue.owner,
             repo: context.issue.repo,
-        }).then(comments => comments.data.find(comment => comment.user?.name === 'github-actions[bot]' && comment.body?.includes('| Owner | FilePath |')));
+        });
+        console.info('Fetched comments for PR', comments);
+        const comment = comments.data.find(comment => comment.body?.includes('| Owner | FilePath |'));
 
         // Update the existing comment
         if (comment) {
