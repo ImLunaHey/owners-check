@@ -11,12 +11,8 @@ const createComment = (minSetOfPeople: Set<string>, owners: Record<string, strin
 
 const main = async () => {
     try {
-        const base = context.payload.pull_request?.base.sha;
-        const head = context.payload.pull_request?.head.sha;
-
         const token = process.env.GITHUB_TOKEN || core.getInput('token');
         if (!token) throw new Error('token not specified');
-        console.info('Found Github token', { token });
 
         const octokit = getOctokit(token);
 
@@ -31,18 +27,18 @@ const main = async () => {
         // Workspace directory
         const workspaceDirectory = process.env.GITHUB_WORKSPACE;
         if (!workspaceDirectory) throw new Error('No workspace');
-        console.info('Found workspace directory', { workspaceDirectory });
 
         // PR number
         const prNumber = context.payload.pull_request?.number;
         if (!prNumber) throw new Error('No PR number');
-        console.info('Found PR number', { prNumber });
 
         // Get code owner of files
         const codeOwners = new CodeOwners(workspaceDirectory);
 
         // Get all files that were changed in PR
-        console.log('SHA before PR', { base, head });
+        const base = context.payload.pull_request?.base.sha;
+        const head = context.payload.pull_request?.head.sha;
+        console.log('PR SHA', { base, head });
         const response = await octokit.rest.repos.compareCommits({
             base,
             head,
@@ -51,7 +47,7 @@ const main = async () => {
         });
 
         const changedFiles = response.data.files?.map(file => file.filename) ?? [];
-        console.info('Files changed since last commit', { changedFiles });
+        console.info('Files changed since last commit', changedFiles);
 
         // Get the owner of each file
         const owners: Record<string, string[]> = {};
@@ -70,7 +66,7 @@ const main = async () => {
                 (files[filePath] as string[]).push(owner);
             }
         }
-        console.info('Found owners of files', { owners, files });
+        console.info('Found owners of files', owners);
 
         // Get the minimum set of reviewers we need
         const uncoveredFiles = new Set(Object.keys(files));
@@ -92,13 +88,13 @@ const main = async () => {
                 owners[bestPerson].forEach(file => uncoveredFiles.delete(file));
             }
         }
-        console.info('Found minimum needed owners', { minSetOfPeople });
+        console.info('Found minimum needed owners', [...minSetOfPeople.values()]);
 
         // Auto add reviewers to PR
         if (core.getInput('auto-add-reviewers')) {
-            console.info('Attempting to add reviewers', { minSetOfPeople });
+            console.info('Attempting to add reviewers', [...minSetOfPeople.values()]);
             await addReviewers(prNumber, [...minSetOfPeople.values()]);
-            console.info('Automatically added reviewers', { minSetOfPeople });
+            console.info('Automatically added reviewers', [...minSetOfPeople.values()]);
         }
 
         // Try to find existing comment
@@ -116,7 +112,7 @@ const main = async () => {
                 comment_id: comment.id,
                 body: createComment(minSetOfPeople, owners),
             });
-            console.info('Comment added', { comment });
+            console.info('Comment updated');
         }
 
         // Create a new comment
@@ -127,7 +123,7 @@ const main = async () => {
                 issue_number: prNumber,
                 body: createComment(minSetOfPeople, owners),
             });
-            console.info('Comment added', { comment });
+            console.info('Comment added');
         }
     } catch (error: unknown) {
         if (error instanceof Error) {
